@@ -523,6 +523,10 @@ Resources:
           - !Ref BastionHostRole
           - !Ref AlternativeIAMRole
       Path: /
+  EIP1:
+    Type: 'AWS::EC2::EIP'
+    Properties:
+      Domain: vpc
   EIP2:
     Type: 'AWS::EC2::EIP'
     Condition: 2BastionCondition
@@ -555,12 +559,6 @@ Resources:
         - Key: Name
           Value: !Ref BastionHostName
           PropagateAtLaunch: true
-    CreationPolicy:
-      ResourceSignal:
-        Count: !Ref NumBastionHosts
-        Timeout: PT30M
-      AutoScalingCreationPolicy:
-        MinSuccessfulInstancesPercent: 100
     UpdatePolicy:
       AutoScalingReplacingUpdate:
         WillReplace: true
@@ -671,7 +669,7 @@ Resources:
             #qs_bootstrap_pip || qs_err " pip bootstrap failed ";
             qs_aws-cfn-bootstrap || qs_err " cfn bootstrap failed ";
 
-            EIP_LIST="52.210.159.119,${EIP2},${EIP3},${EIP4}"
+            EIP_LIST="$EIP1,${EIP2},${EIP3},${EIP4}"
             CLOUDWATCHGROUP=${BastionMainLogGroup}
             cfn-init -v --stack '${AWS::StackName}' --resource BastionLaunchConfiguration --region ${AWS::Region} || cfn_fail
             [ $(qs_status) == 0 ] && cfn_success || cfn_fail
