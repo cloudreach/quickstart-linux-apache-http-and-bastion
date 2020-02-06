@@ -523,25 +523,6 @@ Resources:
           - !Ref BastionHostRole
           - !Ref AlternativeIAMRole
       Path: /
-  EIP1:
-    Type: 'AWS::EC2::EIP'
-    Properties:
-      Domain: vpc
-  EIP2:
-    Type: 'AWS::EC2::EIP'
-    Condition: 2BastionCondition
-    Properties:
-      Domain: vpc
-  EIP3:
-    Type: 'AWS::EC2::EIP'
-    Condition: 3BastionCondition
-    Properties:
-      Domain: vpc
-  EIP4:
-    Type: 'AWS::EC2::EIP'
-    Condition: 4BastionCondition
-    Properties:
-      Domain: vpc
   BastionAutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
@@ -559,6 +540,12 @@ Resources:
         - Key: Name
           Value: !Ref BastionHostName
           PropagateAtLaunch: true
+    CreationPolicy:
+      ResourceSignal:
+        Count: !Ref NumBastionHosts
+        Timeout: PT30M
+      AutoScalingCreationPolicy:
+        MinSuccessfulInstancesPercent: 100
     UpdatePolicy:
       AutoScalingReplacingUpdate:
         WillReplace: true
@@ -631,63 +618,46 @@ Resources:
             Encrypted: true
             DeleteOnTermination: true
       UserData:
-        Fn::Base64: !Sub
-          - |
-            #!/bin/bash
-            set -x
-            for e in $(echo "${EnvironmentVariables}" | tr ',' ' '); do
-              export $e
-            done
-            export PATH=$PATH:/usr/local/bin
-            #cfn signaling functions
-            yum install git -y || apt-get install -y git || zypper -n install git
-            yum install httpd -y || apt-get install -y httpd || zypper -n install httpd
-            yum install wget -y || apt-get install -y wget || zypper -n install wget
-            yum install unzip -y || apt-get install -y unzip || zypper -n install unzip
-            wget -O /tmp/www.zip https://quickstart-cloudreach.s3-eu-west-1.amazonaws.com/www.zip
-            unzip /tmp/www.zip -d /var/www/html
-            sed -i 's/MOTD_PLACEHOLDER/${MOTD}/g' /var/www/html/index.html
-            service httpd start
-            chkconfig httpd on
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -x
+          for e in $(echo "${EnvironmentVariables}" | tr ',' ' '); do
+            export $e
+          done
+          export PATH=$PATH:/usr/local/bin
+          #cfn signaling functions
+          yum install git -y || apt-get install -y git || zypper -n install git
+          yum install httpd -y || apt-get install -y httpd || zypper -n install httpd
+          yum install wget -y || apt-get install -y wget || zypper -n install wget
+          yum install unzip -y || apt-get install -y unzip || zypper -n install unzip
+          wget -O /tmp/www.zip https://quickstart-cloudreach.s3-eu-west-1.amazonaws.com/www.zip
+          unzip /tmp/www.zip -d /var/www/html
+          sed -i 's/MOTD_PLACEHOLDER/${MOTD}/g' /var/www/html/index.html
+          service httpd start
+          chkconfig httpd on
 
-            function cfn_fail
-            {
-              cfn-signal -e 1 --stack ${AWS::StackName} --region ${AWS::Region} --resource BastionLaunchConfiguration
-              exit 1
-            }
+          function cfn_fail
+          {
+            cfn-signal -e 1 --stack ${AWS::StackName} --region ${AWS::Region} --resource BastionLaunchConfiguration
+            exit 1
+          }
 
-            function cfn_success
-            {
-              cfn-signal -e 0 --stack ${AWS::StackName} --region ${AWS::Region} --resource BastionAutoScalingGroup
-              exit 0
-            }
+          function cfn_success
+          {
+            cfn-signal -e 0 --stack ${AWS::StackName} --region ${AWS::Region} --resource BastionAutoScalingGroup
+            exit 0
+          }
 
-            until git clone https://github.com/aws-quickstart/quickstart-linux-utilities.git ; do echo "Retrying"; done
-            cd /quickstart-linux-utilities;
-            source quickstart-cfn-tools.source;
-            qs_update-os || qs_err;
-            #qs_bootstrap_pip || qs_err " pip bootstrap failed ";
-            qs_aws-cfn-bootstrap || qs_err " cfn bootstrap failed ";
+          until git clone https://github.com/aws-quickstart/quickstart-linux-utilities.git ; do echo "Retrying"; done
+          cd /quickstart-linux-utilities;
+          source quickstart-cfn-tools.source;
+          qs_update-os || qs_err;
+          #qs_bootstrap_pip || qs_err " pip bootstrap failed ";
+          qs_aws-cfn-bootstrap || qs_err " cfn bootstrap failed ";
 
-            EIP_LIST="$EIP1,${EIP2},${EIP3},${EIP4}"
-            CLOUDWATCHGROUP=${BastionMainLogGroup}
-            cfn-init -v --stack '${AWS::StackName}' --resource BastionLaunchConfiguration --region ${AWS::Region} || cfn_fail
-            [ $(qs_status) == 0 ] && cfn_success || cfn_fail
-          - EIP2:
-              !If
-              - 2BastionCondition
-              - !Ref EIP2
-              - 'Null'
-            EIP3:
-              !If
-              - 3BastionCondition
-              - !Ref EIP3
-              - 'Null'
-            EIP4:
-              !If
-              - 4BastionCondition
-              - !Ref EIP4
-              - 'Null'
+          CLOUDWATCHGROUP=${BastionMainLogGroup}
+          cfn-init -v --stack '${AWS::StackName}' --resource BastionLaunchConfiguration --region ${AWS::Region} || cfn_fail
+          [ $(qs_status) == 0 ] && cfn_success || cfn_fail
   BastionSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -716,24 +686,6 @@ Outputs:
     Value: !Ref BastionAutoScalingGroup
     Export:
       Name: !Sub '${AWS::StackName}-BastionAutoScalingGroup'
-  EIP2:
-    Condition: 2BastionCondition
-    Description: Elastic IP 2 for Bastion
-    Value: !Ref EIP2
-    Export:
-      Name: !Sub '${AWS::StackName}-EIP2'
-  EIP3:
-    Condition: 3BastionCondition
-    Description: Elastic IP 3 for Bastion
-    Value: !Ref EIP3
-    Export:
-      Name: !Sub '${AWS::StackName}-EIP3'
-  EIP4:
-    Condition: 4BastionCondition
-    Description: Elastic IP 4 for Bastion
-    Value: !Ref EIP4
-    Export:
-      Name: !Sub '${AWS::StackName}-EIP4'
   CloudWatchLogs:
     Description: CloudWatch Logs GroupName. Your SSH logs will be stored here.
     Value: !Ref BastionMainLogGroup
