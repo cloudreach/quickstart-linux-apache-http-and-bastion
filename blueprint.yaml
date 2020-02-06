@@ -32,3 +32,6 @@ deployment:
     STACK_NAME:
       type: string
       description: Name for the deployed stack.
+    MOTD:
+      type: string
+      description: MOTD to appear on the landing page.
