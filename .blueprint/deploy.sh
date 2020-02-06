@@ -5,6 +5,7 @@ AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
 echo "Submitting CloudFormation Template..."
 
 aws cloudformation create-stack --stack-name ${STACK_NAME} \
+-- MOTD ${MOTD} \
 --template-body file://blueprint/templates/linux-apache-http-master.template \
  --capabilities CAPABILITY_IAM
 
