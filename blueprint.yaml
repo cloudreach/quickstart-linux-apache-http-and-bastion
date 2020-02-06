@@ -20,6 +20,9 @@ deployment:
     - An AWS access key and secret.
     - A key pair named 'default' in region deployed to.
   user_parameters:
+    EMAIL_ADDRESS:
+      type: string
+      description: The email address to send notifications to
     AWS_ACCESS_KEY_ID:
       type: string
       description: AWS access key ID

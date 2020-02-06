@@ -13,6 +13,7 @@ params:
   AWS_DEFAULT_REGION: ((AWS_DEFAULT_REGION))
   MOTD: ((MOTD))
   STACK_NAME: ((STACK_NAME))
+  EMAIL_ADDRESS: ((EMAIL_ADDRESS))
 
 run:
   path: blueprint/.blueprint/deploy.sh

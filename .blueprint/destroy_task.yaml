@@ -11,6 +11,7 @@ params:
   AWS_SECRET_ACCESS_KEY: ((AWS_SECRET_ACCESS_KEY))
   AWS_DEFAULT_REGION: ((AWS_DEFAULT_REGION))
   STACK_NAME: ((STACK_NAME))
+  EMAIL_ADDRESS: ((EMAIL_ADDRESS))
 
 run:
   path: blueprint/.blueprint/destroy.sh
