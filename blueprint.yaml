@@ -1,4 +1,4 @@
-name: aws-quickstart-linux-apache-http-and-bastion
+name: aws-quickstart-brambles-demo
 version: 0.2.0
 origin: Cloudamize
 summary: Deploys the AWS Linux Bastion Quickstart with modification to show case Apache HTTP.
